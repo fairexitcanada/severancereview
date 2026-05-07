@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fair Exit — Severance Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', Arial, sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 24px rgba(15,35,64,0.1);
+    max-width: 580px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: #0f2340;
+    padding: 2.25rem 2.5rem 2rem;
+  }
+
+  .header-label {
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.5);
+    margin-bottom: .6rem;
+  }
+
+  .header-title {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 26px;
+    color: #fff;
+    margin-bottom: .4rem;
+  }
+
+  .header-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,.55);
+    line-height: 1.55;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: rgba(255,255,255,.15);
+    border-radius: 2px;
+    margin-top: 1.5rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #378add;
+    border-radius: 2px;
+    transition: width .35s;
+    width: 0%;
+  }
+
+  .card-body {
+    padding: 2rem 2.5rem 2.5rem;
+  }
+
+  .step-meta {
+    font-size: 11px;
+    color: #8a9bb0;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 1.1rem;
+    font-weight: 500;
+  }
+
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .q-label {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 20px;
+    color: #0f2340;
+    margin-bottom: .35rem;
+    line-height: 1.3;
+  }
+
+  .q-sub {
+    font-size: 13px;
+    color: #4a6080;
+    margin-bottom: 1.1rem;
+    line-height: 1.5;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .opt {
+    background: #fff;
+    border: 1.5px solid #d4dde8;
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    color: #0f2340;
+    font-family: 'DM Sans', Arial, sans-serif;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color .12s, background .12s;
+    width: 100%;
+  }
+
+  .opt:hover {
+    border-color: #378add;
+    background: #e8f0fb;
+  }
+
+  .opt.selected {
+    border-color: #185fa5;
+    background: #e8f0fb;
+    color: #0c447c;
+    font-weight: 500;
+  }
+
+  .dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid #d4dde8;
+    flex-shrink: 0;
+    transition: all .12s;
+  }
+
+  .opt:hover .dot { border-color: #378add; }
+  .opt.selected .dot { border-color: #185fa5; background: #185fa5; box-shadow: inset 0 0 0 3px #e8f0fb; }
+
+  .text-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #d4dde8;
+    border-radius: 10px;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 14px;
+    color: #0f2340;
+    background: #fff;
+    margin-bottom: 10px;
+    outline: none;
+  }
+  .text-input:focus { border-color: #185fa5; }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f0f4f8;
+  }
+
+  .nav-btn {
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 10px;
+    padding: 10px 22px;
+    cursor: pointer;
+    border: 1.5px solid #d4dde8;
+    background: #fff;
+    color: #4a6080;
+    transition: all .12s;
+  }
+
+  .nav-btn:hover:not(:disabled) { border-color: #4a6080; color: #0f2340; }
+  .nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  .nav-btn.primary {
+    background: #0f2340;
+    border-color: #0f2340;
+    color: #fff;
+  }
+  .nav-btn.primary:hover:not(:disabled) { background: #1a3a5c; }
+
+  .result-card {
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .result-card.high { background: #fbebeb; border: 1.5px solid #f09595; }
+  .result-card.mid  { background: #fdf3e3; border: 1.5px solid #e8c07a; }
+  .result-card.ok   { background: #e8f6ee; border: 1.5px solid #8ecfab; }
+
+  .result-eyebrow { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 500; margin-bottom: .35rem; }
+  .high .result-eyebrow { color: #a32d2d; }
+  .mid  .result-eyebrow { color: #854f0b; }
+  .ok   .result-eyebrow { color: #2a7a4b; }
+
+  .result-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 19px; line-height: 1.3; margin-bottom: .5rem; }
+  .high .result-title { color: #a32d2d; }
+  .mid  .result-title { color: #854f0b; }
+  .ok   .result-title { color: #2a7a4b; }
+
+  .result-body { font-size: 14px; line-height: 1.65; color: #4a6080; }
+
+  .info-box {
+    background: #f7f9fc;
+    border-radius: 0 10px 10px 0;
+    border-left: 3px solid #185fa5;
+    padding: 1rem 1.25rem;
+    margin: .75rem 0;
+    font-size: 13px;
+    color: #4a6080;
+    line-height: 1.6;
+  }
+  .info-box.urgent { border-left-color: #e24b4a; background: #fbebeb; }
+  .info-box strong { color: #0f2340; font-weight: 500; }
+
+  .cta-primary {
+    display: block;
+    width: 100%;
+    background: #0f2340;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 1.25rem;
+    text-align: center;
+    transition: background .12s;
+  }
+  .cta-primary:hover { background: #1a3a5c; }
+
+  .cta-secondary {
+    display: block;
+    width: 100%;
+    background: transparent;
+    color: #4a6080;
+    border: 1.5px solid #d4dde8;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    text-align: center;
+    transition: all .12s;
+  }
+  .cta-secondary:hover { border-color: #4a6080; color: #0f2340; }
+
+  .disclaimer {
+    font-size: 11px;
+    color: #8a9bb0;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #d4dde8;
+    line-height: 1.7;
+  }
+
+  .restart-btn {
+    background: none;
+    border: none;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 12px;
+    color: #8a9bb0;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 1rem;
+    display: block;
+    padding: 0;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 0; }
+    .card { border-radius: 0; min-height: 100vh; }
+    .card-header { padding: 1.75rem 1.5rem 1.5rem; }
+    .card-body { padding: 1.5rem 1.5rem 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <div class="header-label">Ontario Employment Consultants</div>
+    <div class="header-title">Was your termination fair?</div>
+    <p class="header-sub">Answer 7 quick questions to see if your offer aligns with Ontario law.</p>
+    <div class="progress-track"><div class="progress-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card-body">
+    <div class="step-meta" id="slabel">Step 1 of 7</div>
+
+    <div class="step active" id="s1">
+      <p class="q-label">How were you terminated?</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this,'termType','without_cause')"><span class="dot"></span>Without cause (restructuring, position eliminated)</button>
+        <button class="opt" onclick="pick(this,'termType','with_cause')"><span class="dot"></span>With cause (misconduct or performance)</button>
+        <button class="opt" onclick="pick(this,'termType','layoff')"><span class="dot"></span>Temporary or permanent layoff</button>
+        <button class="opt" onclick="pick(this,'termType','constructive')"><span class="dot"></span>I resigned but felt forced out</button>
+        <button class="opt" onclick="pick(this,'termType','unsure')"><span class="dot"></span>Not sure</button>
+      </div>
+    </div>
+
+    <div class="step" id="s2">
+      <p class="q-label">How long were you employed there?</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this,'tenure','under1')"><span class="dot"></span>Less than 1 year</button>
+        <button class="opt" onclick="pick(this,'tenure','1to3')"><span class="dot"></span>1–3 years</button>
+        <button class="opt" onclick="pick(this,'tenure','3to5')"><span class="dot"></span>3–5 years</button>
+        <button class="opt" onclick="pick(this,'tenure','5to10')"><span class="dot"></span>5–10 years</button>
+        <button class="opt" onclick="pick(this,'tenure','over10')"><span class="dot"></span>More than 10 years</button>
+      </div>
+    </div>
+
+    <div class="step" id="s3">
+      <p class="q-label">Were you offered any severance pay?</p>
+      <p class="q-sub">Not counting vacation pay owed to you.</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this,'severance','none')"><span class="dot"></span>No — nothing was offered</button>
+        <button class="opt" onclick="pick(this,'severance','under2')"><span class="dot"></span>Yes — less than 2 weeks' pay</button>
+        <button class="opt" onclick="pick(this,'severance','2to4')"><span class="dot"></span>Yes — 2 to 4 weeks' pay</button>
+        <button class="opt" onclick="pick(this,'severance','over4')"><span class="dot"></span>Yes — more than 4 weeks per year worked</button>
+        <button class="opt" onclick="pick(this,'severance','unsure')"><span class="dot"></span>Not sure / still negotiating</button>
+      </div>
+    </div>
+
+    <div class="step" id="s4">
+      <p class="q-label">Were you asked to sign a release?</p>
+      <p class="q-sub">A separation agreement or "full and final settlement."</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this,'signed','yes_signed')"><span class="dot"></span>Yes, and I already signed it</button>
+        <button class="opt" onclick="pick(this,'signed','yes_unsigned')"><span class="dot"></span>Yes, but I haven't signed yet</button>
+        <button class="opt" onclick="pick(this,'signed','no')"><span class="dot"></span>No, nothing to sign</button>
+        <button class="opt" onclick="pick(this,'signed','unsure')"><span class="dot"></span>Not sure</button>
+      </div>
+    </div>
+
+    <div class="step" id="s5">
+      <p class="q-label">Were you given working notice?</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this,'notice','working')"><span class="dot"></span>Yes — I worked out a notice period</button>
+        <button class="opt" onclick="pick(this,'notice','pay_lieu')"><span class="dot"></span>No — I was given pay in lieu of notice</button>
+        <button class="opt" onclick="pick(this,'notice','neither')"><span class="dot"></span>No — I received neither notice nor pay</button>
+        <button class="opt" onclick="pick(this,'notice','unsure')"><span class="dot"></span>Not sure</button>
+      </div>
+    </div>
+
+    <div class="step" id="s6">
+      <p class="q-label">What best describes your role?</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this,'role','fulltime')"><span class="dot"></span>Full-time permanent employee</button>
+        <button class="opt" onclick="pick(this,'role','parttime')"><span class="dot"></span>Part-time permanent employee</button>
+        <button class="opt" onclick="pick(this,'role','contract')"><span class="dot"></span>Fixed-term contract</button>
+        <button class="opt" onclick="pick(this,'role','manager')"><span class="dot"></span>Manager or executive</button>
+      </div>
+    </div>
+
+    <div class="step" id="s7">
+      <p class="q-label">Where should we send your summary?</p>
+      <p class="q-sub">Optional — we'll follow up with a free 15-minute consultation offer.</p>
+      <input class="text-input" type="text" id="nameIn" placeholder="Your first name (optional)" />
+      <input class="text-input" type="email" id="emailIn" placeholder="Email address (optional)" />
+    </div>
+
+    <div class="step" id="sr">
+      <div id="rcontent"></div>
+      <button class="restart-btn" onclick="restart()">← Start over</button>
+    </div>
+
+    <div class="nav-row" id="navrow">
+      <button class="nav-btn" id="backbtn" onclick="goBack()" disabled>Back</button>
+      <button class="nav-btn primary" id="nextbtn" onclick="goNext()" disabled>Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var ans = {};
+var cur = 1;
+var total = 7;
+
+function pick(el, key, val) {
+  ans[key] = val;
+  var btns = el.closest('.options').querySelectorAll('.opt');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('selected');
+  el.classList.add('selected');
+  document.getElementById('nextbtn').disabled = false;
+}
+
+function setProgress() {
+  var pct = cur <= total ? ((cur - 1) / total * 100) : 100;
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('slabel').textContent = cur <= total ? ('Step ' + cur + ' of ' + total) : 'Your results';
+}
+
+function goNext() {
+  if (cur === total) { showResult(); return; }
+  document.getElementById('s' + cur).classList.remove('active');
+  cur++;
+  document.getElementById('s' + cur).classList.add('active');
+  document.getElementById('backbtn').disabled = false;
+  document.getElementById('nextbtn').disabled = cur < total ? !hasAnswer(cur) : false;
+  document.getElementById('nextbtn').textContent = cur === total ? 'See my results →' : 'Next';
+  setProgress();
+}
+
+function goBack() {
+  document.getElementById('s' + cur).classList.remove('active');
+  cur--;
+  document.getElementById('s' + cur).classList.add('active');
+  document.getElementById('backbtn').disabled = cur === 1;
+  document.getElementById('nextbtn').disabled = false;
+  document.getElementById('nextbtn').textContent = cur === total ? 'See my results →' : 'Next';
+  setProgress();
+}
+
+function hasAnswer(step) {
+  var keys = ['termType','tenure','severance','signed','notice','role',''];
+  var k = keys[step - 1];
+  return k ? !!ans[k] : true;
+}
+
+function getScore() {
+  var s = 0;
+  if (ans.termType === 'with_cause') s -= 2;
+  if (ans.termType === 'constructive') s += 3;
+  if (ans.termType === 'without_cause' || ans.termType === 'layoff') s += 1;
+  if (ans.severance === 'none') s += 3;
+  if (ans.severance === 'under2') s += 2;
+  if (ans.severance === '2to4') s += 1;
+  if (ans.severance === 'over4') s -= 1;
+  if (ans.signed === 'yes_unsigned') s += 2;
+  if (ans.signed === 'yes_signed') s += 1;
+  if (ans.notice === 'neither') s += 2;
+  if (ans.tenure === 'over10') s += 1;
+  if (ans.tenure === '5to10') s += 1;
+  if (ans.role === 'manager') s += 1;
+  return s;
+}
+
+function getESA() {
+  return {under1:0,'1to3':2,'3to5':4,'5to10':6,over10:8}[ans.tenure] || 0;
+}
+
+function showResult() {
+  document.getElementById('s' + cur).classList.remove('active');
+  document.getElementById('sr').classList.add('active');
+  document.getElementById('navrow').style.display = 'none';
+  cur = total + 1;
+  setProgress();
+
+  var score = getScore();
+  var esa = getESA();
+  var name = document.getElementById('nameIn').value.trim();
+  var greet = name ? (name + ', ') : '';
+  var html = '';
+
+  if (ans.termType === 'with_cause') {
+    html += '<div class="result-card ok"><div class="result-eyebrow">For cause termination</div><div class="result-title">Your situation may be more complex</div><div class="result-body">' + greet + 'Terminations "with cause" carry different rules — but employers frequently misuse this label. Proving just cause is a high legal bar. A free review is still worthwhile.</div></div>';
+  } else if (score >= 5) {
+    html += '<div class="result-card high"><div class="result-eyebrow">High concern</div><div class="result-title">Your offer may be significantly below what you\'re owed</div><div class="result-body">' + greet + 'Based on your answers, there are several indicators your termination may not meet Ontario\'s legal standards. We strongly recommend speaking with an employment lawyer before signing anything.</div></div>';
+  } else if (score >= 2) {
+    html += '<div class="result-card mid"><div class="result-eyebrow">Worth reviewing</div><div class="result-title">Your offer may be lower than your entitlement</div><div class="result-body">' + greet + 'There are a few areas worth a closer look. Ontario employees are often entitled to more than the minimum — a free second opinion could make a real difference.</div></div>';
+  } else {
+    html += '<div class="result-card ok"><div class="result-eyebrow">Appears reasonable</div><div class="result-title">Your offer looks fair — but a second opinion never hurts</div><div class="result-body">' + greet + 'Your situation doesn\'t show obvious red flags. That said, common law entitlements often exceed ESA minimums, and it costs nothing to confirm before you sign.</div></div>';
+  }
+
+  if (esa > 0) {
+    html += '<div class="info-box"><strong>Ontario ESA minimum for your tenure:</strong> approximately <strong>' + esa + ' weeks</strong>. This is the legal floor — common law entitlements are often significantly higher.</div>';
+  }
+
+  if (ans.signed === 'yes_unsigned') {
+    html += '<div class="info-box urgent"><strong>You haven\'t signed yet — act before you do.</strong> This is your most important window. Do not sign any release until you\'ve had a free legal review.</div>';
+  }
+
+  if (ans.signed === 'yes_signed') {
+    html += '<div class="info-box"><strong>You\'ve already signed:</strong> a signed release limits options, but not always entirely. Some agreements can be challenged — still worth a conversation.</div>';
+  }
+
+  var ctaLabel = (score >= 2 || ans.signed === 'yes_unsigned') ? 'Book a free 15-minute consultation →' : 'Get a free second opinion →';
+  html += '<button class="cta-primary" onclick="window.location.href=\'https://calendly.com/fairexitcanada/severancereview\'">' + ctaLabel + '</button>';
+  html += '<button class="cta-secondary" onclick="window.location.href=\'mailto:hello@fairexit.ca\'">Learn more about Ontario severance rights</button>';
+  html += '<p class="disclaimer">This tool provides general information only and does not constitute legal advice. Results are based on your self-reported answers and Ontario ESA minimums. Always consult a licensed employment lawyer for advice specific to your situation.</p>';
+
+  document.getElementById('rcontent').innerHTML = html;
+}
+
+function restart() {
+  ans = {};
+  cur = 1;
+  var steps = document.querySelectorAll('.step');
+  for (var i = 0; i < steps.length; i++) steps[i].classList.remove('active');
+  document.getElementById('s1').classList.add('active');
+  var opts = document.querySelectorAll('.opt');
+  for (var i = 0; i < opts.length; i++) opts[i].classList.remove('selected');
+  document.getElementById('nameIn').value = '';
+  document.getElementById('emailIn').value = '';
+  document.getElementById('navrow').style.display = 'flex';
+  document.getElementById('nextbtn').disabled = true;
+  document.getElementById('nextbtn').textContent = 'Next';
+  document.getElementById('backbtn').disabled = true;
+  setProgress();
+}
+
+setProgress();
+</script>
+</body>
+</html>
